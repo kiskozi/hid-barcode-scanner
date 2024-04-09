@@ -185,7 +185,7 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
             HorizontalDivider()
         }
     }
-   /* // Floating Button to open email composer
+    // Floating Button to open email composer
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -194,19 +194,12 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
     ) {
         FloatingActionButton(
             onClick = {
-                *//*val emailIntent = Intent(Intent.ACTION_VIEW).apply {
+                val emailIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_EMAIL, arrayOf(""))
                     putExtra(Intent.EXTRA_SUBJECT, "Vonalkódok")
                     putExtra(Intent.EXTRA_TEXT, textToClipboard.value)
-                }*//*
-                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("mailto:")
-                    *//*putExtra(Intent.EXTRA_SUBJECT, "Vonalkódok")
-                    putExtra(Intent.EXTRA_TEXT, textToClipboard.value)*//*
                 }
-                emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Subject")
-                emailIntent.putExtra(Intent.EXTRA_TEXT, textToClipboard.value)
                 if (emailIntent.resolveActivity(context.packageManager) != null) {
                     context.startActivity(emailIntent)
                 } else {
@@ -216,7 +209,7 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
         ) {
             Icon(Icons.Default.Email, contentDescription = "Send email")
         }
-    }*/
+    }
 
 }
 
