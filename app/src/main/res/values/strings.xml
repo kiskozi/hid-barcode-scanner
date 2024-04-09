@@ -209,6 +209,7 @@
         <item>AZTEC</item>
     </string-array>
     <string-array name="keyboard_layout_values">
+        <item>Magyar (HU)</item>
         <item>English (US)</item>
         <item>German (DE)</item>
         <item>French (FR)</item>

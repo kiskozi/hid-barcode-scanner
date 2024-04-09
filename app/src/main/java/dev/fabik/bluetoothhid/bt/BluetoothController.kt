@@ -259,13 +259,14 @@ class BluetoothController(var context: Context) {
         keyboardSender?.sendString(
             string, sendDelay.toLong(), extraKeys,
             when (layout) {
-                1 -> "de"
-                2 -> "fr"
-                3 -> "en"
-                4 -> "es"
-                5 -> "it"
-                6 -> "tr"
-                else -> "us"
+                1 -> "us"
+                2 -> "de"
+                3 -> "fr"
+                4 -> "en"
+                5 -> "es"
+                6 -> "it"
+                7 -> "tr"
+                else -> "hu"
             }, template
         )
 

@@ -42,7 +42,7 @@ open class PreferenceStore {
         val SHOW_UNNAMED = booleanPreferencesKey("show_unnamed") defaultsTo false
         val SEND_DELAY = floatPreferencesKey("send_delay") defaultsTo 10f
         val KEYBOARD_LAYOUT = intPreferencesKey("keyboard_layout") defaultsTo 0
-        val EXTRA_KEYS = intPreferencesKey("extra_keys") defaultsTo 0 // None
+        val EXTRA_KEYS = intPreferencesKey("extra_keys") defaultsTo 2 // Tab
         val TEMPLATE_TEXT = stringPreferencesKey("template_text") defaultsTo ""
 
         // Appearance
