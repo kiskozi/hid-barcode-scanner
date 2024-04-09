@@ -1,16 +1,22 @@
 package dev.fabik.bluetoothhid
 
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
@@ -19,9 +25,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -87,6 +97,7 @@ fun History(onBack: () -> Unit, onClick: (String) -> Unit) = with(viewModel<Hist
     }
 }
 
+@SuppressLint("QueryPermissionsNeeded")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
@@ -99,10 +110,13 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val clipboardString = stringResource(R.string.copied_to_clipboard)
+//    var textToClipboard = ""
+    val textToClipboard = remember { mutableStateOf("") }
 
     LazyColumn(Modifier.fillMaxSize()) {
         items(filteredHistory) { item ->
             val (barcode, time) = item
+            var isChecked by remember { mutableStateOf(false) }
             ListItem(
                 overlineContent = {
                     val timeString = remember {
@@ -116,31 +130,94 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
                     Text(timeString)
                 },
                 headlineContent = {
-                    Text(barcode.rawValue ?: barcode.rawBytes?.contentToString() ?: "")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = isChecked,
+                            onCheckedChange = {
+                                isChecked = it
+                                if (isChecked) {
+                                    textToClipboard.value += "${barcode.rawValue}\n"
+                                    clipboardManager.setText(AnnotatedString(textToClipboard.value))
+                                    Toast.makeText(
+                                        context,
+                                        clipboardString,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    textToClipboard.value = textToClipboard.value.replace("${barcode.rawValue}\n", "")
+                                    clipboardManager.setText(AnnotatedString(textToClipboard.value))
+                                    Toast.makeText(
+                                        context,
+                                        clipboardString,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(barcode.rawValue ?: barcode.rawBytes?.contentToString() ?: "")
+                    }
                 },
                 supportingContent = {
                     Text(parseBarcodeType(barcode.format))
                 },
-                modifier = Modifier.combinedClickable(
-                    onClick = {
-                        barcode.rawValue?.let(onClick)
-                    },
-                    onLongClick = {
-                        // Copy barcode to clipboard
-                        barcode.rawValue?.let {
-                            clipboardManager.setText(AnnotatedString(it))
-                            Toast.makeText(
-                                context,
-                                clipboardString,
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                modifier = Modifier.clickable {
+                    isChecked = !isChecked
+                    if (isChecked) {
+                        textToClipboard.value += "${barcode.rawValue}\n"
+                        clipboardManager.setText(AnnotatedString(textToClipboard.value))
+                        Toast.makeText(
+                            context,
+                            clipboardString,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        textToClipboard.value = textToClipboard.value.replace("${barcode.rawValue}\n", "")
+                        clipboardManager.setText(AnnotatedString(textToClipboard.value))
+                        Toast.makeText(
+                            context,
+                            clipboardString,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-                )
+                }
             )
             HorizontalDivider()
         }
     }
+   /* // Floating Button to open email composer
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        FloatingActionButton(
+            onClick = {
+                *//*val emailIntent = Intent(Intent.ACTION_VIEW).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf(""))
+                    putExtra(Intent.EXTRA_SUBJECT, "Vonalkódok")
+                    putExtra(Intent.EXTRA_TEXT, textToClipboard.value)
+                }*//*
+                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = Uri.parse("mailto:")
+                    *//*putExtra(Intent.EXTRA_SUBJECT, "Vonalkódok")
+                    putExtra(Intent.EXTRA_TEXT, textToClipboard.value)*//*
+                }
+                emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Subject")
+                emailIntent.putExtra(Intent.EXTRA_TEXT, textToClipboard.value)
+                if (emailIntent.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(emailIntent)
+                } else {
+                    Toast.makeText(context, "No email app found", Toast.LENGTH_SHORT).show()
+                }
+            }
+        ) {
+            Icon(Icons.Default.Email, contentDescription = "Send email")
+        }
+    }*/
+
 }
 
 @Composable
@@ -298,3 +375,5 @@ fun AppBarTextField(
         }
     )
 }
+
+
