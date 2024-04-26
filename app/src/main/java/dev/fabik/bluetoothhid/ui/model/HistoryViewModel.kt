@@ -6,21 +6,57 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.google.mlkit.vision.barcode.common.Barcode
 
+
+data class HistoryEntry(
+    val barcode: Barcode,
+    val timestamp: Long,
+    val isChecked: Boolean
+)
 class HistoryViewModel : ViewModel() {
 
     var isSearching by mutableStateOf(false)
     var searchQuery by mutableStateOf("")
 
     companion object {
-        var historyEntries by mutableStateOf<List<Pair<Barcode, Long>>>(emptyList())
-
+        var textToClipboard = mutableStateOf("")
+        var isAllChecked by mutableStateOf<Boolean>(false)
+        var historyEntries by mutableStateOf<List<HistoryEntry>>(emptyList())
         fun addHistoryItem(barcode: Barcode) {
             val currentTime = System.currentTimeMillis()
-            historyEntries = historyEntries + (barcode to currentTime)
+            historyEntries = historyEntries + HistoryEntry(barcode, currentTime, false)
+        }
+
+        fun setCheckBoxOnHistoryEntry(historyEntry: HistoryEntry, checkBoxState: Boolean) {
+            val index = historyEntries.indexOf(historyEntry)
+            val updatedEntry = historyEntries[index].copy(isChecked = checkBoxState)
+            historyEntries = historyEntries.toMutableList().apply {
+                set(index, updatedEntry)
+            }
+
+            if (checkBoxState) {
+                textToClipboard.value += "${updatedEntry.barcode.rawValue}\n"
+            } else {
+                textToClipboard.value = textToClipboard.value.replace("${updatedEntry.barcode.rawValue}\n", "")
+            }
+
+        }
+        fun setAllCheckBox(isChecked: Boolean) {
+            historyEntries = historyEntries.map { it.copy(isChecked = isChecked) }
+            isAllChecked = !isAllChecked
+            if (isChecked) {
+                textToClipboard.value = ""
+                historyEntries.forEach {
+                    textToClipboard.value += (it.barcode.rawValue ?: "") + "\n"
+                }
+            } else {
+                textToClipboard.value = ""
+            }
         }
 
         fun clearHistory() {
             historyEntries = emptyList()
+            textToClipboard.value = ""
+            isAllChecked = false
         }
     }
 

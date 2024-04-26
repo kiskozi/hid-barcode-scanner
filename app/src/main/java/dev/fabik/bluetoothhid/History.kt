@@ -8,6 +8,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -106,17 +107,50 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
             barcode.rawValue?.contains(searchQuery, ignoreCase = true) ?: false
         }
     }
-
+    val textToClipboard = remember {HistoryViewModel.textToClipboard}
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val clipboardString = stringResource(R.string.copied_to_clipboard)
-//    var textToClipboard = ""
-    val textToClipboard = remember { mutableStateOf("") }
-
     LazyColumn(Modifier.fillMaxSize()) {
+        if (filteredHistory.isNotEmpty()) {
+            stickyHeader {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .clickable {
+                            HistoryViewModel.setAllCheckBox(!HistoryViewModel.isAllChecked)
+                            clipboardManager.setText(AnnotatedString(textToClipboard.value))
+                            Toast
+                                .makeText(
+                                    context,
+                                    clipboardString,
+                                    Toast.LENGTH_SHORT
+                                )
+                                .show()
+                        }
+                ) {
+                    Checkbox(
+                        checked = HistoryViewModel.isAllChecked,
+                        onCheckedChange = {
+                            HistoryViewModel.setAllCheckBox(it)
+                            clipboardManager.setText(AnnotatedString(textToClipboard.value))
+                            Toast.makeText(
+                                context,
+                                clipboardString,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    )
+                    Text(
+                        text = if (HistoryViewModel.isAllChecked) "Uncheck all" else "Copy all",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
         items(filteredHistory) { item ->
             val (barcode, time) = item
-            var isChecked by remember { mutableStateOf(false) }
             ListItem(
                 overlineContent = {
                     val timeString = remember {
@@ -132,26 +166,16 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
                 headlineContent = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
-                            checked = isChecked,
+                            checked = item.isChecked,
                             onCheckedChange = {
-                                isChecked = it
-                                if (isChecked) {
-                                    textToClipboard.value += "${barcode.rawValue}\n"
-                                    clipboardManager.setText(AnnotatedString(textToClipboard.value))
-                                    Toast.makeText(
-                                        context,
-                                        clipboardString,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } else {
-                                    textToClipboard.value = textToClipboard.value.replace("${barcode.rawValue}\n", "")
-                                    clipboardManager.setText(AnnotatedString(textToClipboard.value))
-                                    Toast.makeText(
-                                        context,
-                                        clipboardString,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                                if (!it) {HistoryViewModel.isAllChecked = false}
+                                HistoryViewModel.setCheckBoxOnHistoryEntry(item, it)
+                                clipboardManager.setText(AnnotatedString(textToClipboard.value))
+                                Toast.makeText(
+                                    context,
+                                    clipboardString,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -162,24 +186,14 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
                     Text(parseBarcodeType(barcode.format))
                 },
                 modifier = Modifier.clickable {
-                    isChecked = !isChecked
-                    if (isChecked) {
-                        textToClipboard.value += "${barcode.rawValue}\n"
-                        clipboardManager.setText(AnnotatedString(textToClipboard.value))
-                        Toast.makeText(
-                            context,
-                            clipboardString,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        textToClipboard.value = textToClipboard.value.replace("${barcode.rawValue}\n", "")
-                        clipboardManager.setText(AnnotatedString(textToClipboard.value))
-                        Toast.makeText(
-                            context,
-                            clipboardString,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                    if (item.isChecked) {HistoryViewModel.isAllChecked = false}
+                    HistoryViewModel.setCheckBoxOnHistoryEntry(item, item.isChecked.not())
+                    clipboardManager.setText(AnnotatedString(textToClipboard.value))
+                    Toast.makeText(
+                        context,
+                        clipboardString,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             )
             HorizontalDivider()
