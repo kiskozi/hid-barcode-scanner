@@ -19,7 +19,7 @@ class HistoryViewModel : ViewModel() {
 
     companion object {
         var textToClipboard = mutableStateOf("")
-        var isAllChecked by mutableStateOf<Boolean>(false)
+        var isAllChecked by mutableStateOf(false)
         var historyEntries by mutableStateOf<List<HistoryEntry>>(emptyList())
         fun addHistoryItem(barcode: Barcode) {
             val currentTime = System.currentTimeMillis()
@@ -32,13 +32,13 @@ class HistoryViewModel : ViewModel() {
             historyEntries = historyEntries.toMutableList().apply {
                 set(index, updatedEntry)
             }
-
-            if (checkBoxState) {
-                textToClipboard.value += "${updatedEntry.barcode.rawValue}\n"
-            } else {
-                textToClipboard.value = textToClipboard.value.replace("${updatedEntry.barcode.rawValue}\n", "")
+            textToClipboard.value = ""
+            historyEntries.forEach {
+                if (it.isChecked) {
+                    textToClipboard.value += (it.barcode.rawValue ?: "") + "\n"
+                }
             }
-
+            isAllChecked = (textToClipboard.value.lines().count() -1 ) == historyEntries.count()
         }
         fun setAllCheckBox(isChecked: Boolean) {
             historyEntries = historyEntries.map { it.copy(isChecked = isChecked) }

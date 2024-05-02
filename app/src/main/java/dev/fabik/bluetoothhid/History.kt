@@ -170,7 +170,6 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
                         Checkbox(
                             checked = item.isChecked,
                             onCheckedChange = {
-                                if (!it) {HistoryViewModel.isAllChecked = false}
                                 HistoryViewModel.setCheckBoxOnHistoryEntry(item, it)
                                 clipboardManager.setText(AnnotatedString(textToClipboard.value))
                                 Toast.makeText(
@@ -188,7 +187,6 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
                     Text(parseBarcodeType(barcode.format))
                 },
                 modifier = Modifier.clickable {
-                    if (item.isChecked) {HistoryViewModel.isAllChecked = false}
                     HistoryViewModel.setCheckBoxOnHistoryEntry(item, item.isChecked.not())
                     clipboardManager.setText(AnnotatedString(textToClipboard.value))
                     Toast.makeText(
