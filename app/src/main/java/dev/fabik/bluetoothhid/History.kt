@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddBox
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Search
@@ -71,6 +72,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.fabik.bluetoothhid.ui.ConfirmDialog
+import dev.fabik.bluetoothhid.ui.DialogState
+import dev.fabik.bluetoothhid.ui.TextBoxDialog
 import dev.fabik.bluetoothhid.ui.model.HistoryViewModel
 import dev.fabik.bluetoothhid.ui.rememberDialogState
 import dev.fabik.bluetoothhid.ui.tooltip
@@ -104,14 +107,15 @@ fun History(onBack: () -> Unit, onClick: (String) -> Unit) = with(viewModel<Hist
 @Composable
 fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
     val filteredHistory = remember(HistoryViewModel.historyEntries, searchQuery) {
-        HistoryViewModel.historyEntries.filter { (barcode, _) ->
-            barcode.rawValue?.contains(searchQuery, ignoreCase = true) ?: false
+        HistoryViewModel.historyEntries.filter { it ->
+            it.rawValue.contains(searchQuery, ignoreCase = true) ?: false
         }
     }
     val textToClipboard = remember {HistoryViewModel.textToClipboard}
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val clipboardString = stringResource(R.string.copied_to_clipboard)
+    val manuallyAddItemDialog = rememberDialogState()
     LazyColumn(Modifier.fillMaxSize()) {
         if (filteredHistory.isNotEmpty()) {
             stickyHeader {
@@ -152,7 +156,7 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
             }
         }
         items(filteredHistory) { item ->
-            val (barcode, time) = item
+            val (barcode, time, _, rawValue) = item
             ListItem(
                 overlineContent = {
                     val timeString = remember {
@@ -180,12 +184,19 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
                             }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(barcode.rawValue ?: barcode.rawBytes?.contentToString() ?: "")
+                        Text(barcode?.rawValue ?: barcode?.rawBytes?.contentToString() ?: rawValue)
+                        IconButton(
+                            onClick = {
+                                HistoryViewModel.removeHistoryEntry(item)
+                            }, Modifier.tooltip(stringResource(R.string.clear_history))
+                        ) {
+                            Icon(Icons.Default.Delete, "Clear entry")
+                        }
                     }
                 },
-                supportingContent = {
+                /*supportingContent = {
                     Text(parseBarcodeType(barcode.format))
-                },
+                },*/
                 modifier = Modifier.clickable {
                     HistoryViewModel.setCheckBoxOnHistoryEntry(item, item.isChecked.not())
                     clipboardManager.setText(AnnotatedString(textToClipboard.value))
@@ -224,6 +235,33 @@ fun HistoryViewModel.HistoryContent(onClick: (String) -> Unit) {
             Icon(Icons.Default.Email, contentDescription = "Send email")
         }
     }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        FloatingActionButton(
+            onClick = {
+                manuallyAddItemDialog.open()
+//                HistoryViewModel.addHistoryItemManual("test")
+            }
+        ) {
+            Icon(Icons.Default.AddBox, contentDescription = "Manually add item")
+        }
+    }
+
+    TextBoxDialog(
+        dialogState = manuallyAddItemDialog,
+        title = "Manually add item",
+        text = "",
+        validator = { it.isNotBlank() },
+        onReset = { },
+        onConfirm = {
+            HistoryViewModel.addHistoryItemManual(it)
+
+        })
 
 }
 

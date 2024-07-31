@@ -82,6 +82,7 @@ fun TextBoxDialog(
         onConfirm = {
             close()
             onConfirm(currentText)
+            currentText = ""
         },
         onDismiss = {
             close()

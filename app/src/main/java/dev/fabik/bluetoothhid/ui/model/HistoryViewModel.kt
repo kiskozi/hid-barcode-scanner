@@ -8,9 +8,10 @@ import com.google.mlkit.vision.barcode.common.Barcode
 
 
 data class HistoryEntry(
-    val barcode: Barcode,
+    val barcode: Barcode?,
     val timestamp: Long,
-    val isChecked: Boolean
+    val isChecked: Boolean,
+    val rawValue: String = barcode?.rawValue ?: ""
 )
 class HistoryViewModel : ViewModel() {
 
@@ -21,9 +22,25 @@ class HistoryViewModel : ViewModel() {
         var textToClipboard = mutableStateOf("")
         var isAllChecked by mutableStateOf(false)
         var historyEntries by mutableStateOf<List<HistoryEntry>>(emptyList())
+
+        fun setClipboardAndCheckboxes(isChecked: Boolean){
+            textToClipboard.value = ""
+            historyEntries.forEach {
+                if (it.isChecked) {
+                    textToClipboard.value += (it.rawValue ?: "") + "\n"
+                }
+            }
+            isAllChecked = (textToClipboard.value.lines().count() -1 ) == historyEntries.count()
+        }
         fun addHistoryItem(barcode: Barcode) {
             val currentTime = System.currentTimeMillis()
             historyEntries = historyEntries + HistoryEntry(barcode, currentTime, false)
+        }
+
+        fun addHistoryItemManual(label: String) {
+            val currentTime = System.currentTimeMillis()
+            historyEntries = historyEntries + HistoryEntry(null, currentTime, false, label)
+            isAllChecked = false
         }
 
         fun setCheckBoxOnHistoryEntry(historyEntry: HistoryEntry, checkBoxState: Boolean) {
@@ -35,7 +52,7 @@ class HistoryViewModel : ViewModel() {
             textToClipboard.value = ""
             historyEntries.forEach {
                 if (it.isChecked) {
-                    textToClipboard.value += (it.barcode.rawValue ?: "") + "\n"
+                    textToClipboard.value += (it.rawValue ?: "") + "\n"
                 }
             }
             isAllChecked = (textToClipboard.value.lines().count() -1 ) == historyEntries.count()
@@ -46,11 +63,22 @@ class HistoryViewModel : ViewModel() {
             if (isChecked) {
                 textToClipboard.value = ""
                 historyEntries.forEach {
-                    textToClipboard.value += (it.barcode.rawValue ?: "") + "\n"
+                    textToClipboard.value += (it.rawValue ?: "") + "\n"
                 }
             } else {
                 textToClipboard.value = ""
             }
+        }
+
+        fun removeHistoryEntry(historyEntry: HistoryEntry) {
+            historyEntries = historyEntries.minus(historyEntry)
+            textToClipboard.value = ""
+            historyEntries.forEach {
+                if (it.isChecked) {
+                    textToClipboard.value += (it.rawValue ?: "") + "\n"
+                }
+            }
+            isAllChecked = (textToClipboard.value.lines().count() -1 ) == historyEntries.count()
         }
 
         fun clearHistory() {
